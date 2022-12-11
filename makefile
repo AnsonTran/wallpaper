@@ -1,14 +1,11 @@
-CC=gcc
-CFLAGS=-I.
-# DEPS = hellomake.h
-LIBRARIES=-lxcb
-OBJ = waal.o
 
-%.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS) $(LIBRARIES)
+all: compile
 
-waal: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBRARIES)
+compile:
+	gcc -lSDL2 -lSDL2_image -lX11 main.c -o waal
 
-clean:
-	rm *.o
+test:
+	gcc -lSDL2 -lSDL2_image -lX11 test.c -o test
+
+install: waal
+	cp waal $(HOME)/Scripts/waal

@@ -1,26 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
-#include <Imlib2.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include "utils.h"
-#include <unistd.h>
-#include <dirent.h>
 
 static Display *dpy;
 static int screens;
-
-typedef struct {
-	Window root;
-	int width;
-	int height;
-	SDL_Texture *image;
-	SDL_Window *window;
-	SDL_Renderer *renderer;
-} Monitor;
 
 void captureScreen(Monitor *screen){
 	XImage *capture = XGetImage(dpy, screen->root, 0, 0, screen->width, screen->height, AllPlanes, ZPixmap);
@@ -80,7 +61,7 @@ void randomFile(char *path, char *buf, int size) {
 }
 
 int main(int argc, char **argv) {
-	int long_delay = 500;
+	int long_delay = 1000;
 	int transition_delay = 50;
 	int counter = 0;
 	double alpha_step = 255.0 / transition_delay;

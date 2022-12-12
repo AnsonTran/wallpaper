@@ -8,6 +8,7 @@
 #include <SDL2/SDL_image.h>
 #include "utils.h"
 #include <unistd.h>
+#include <dirent.h>
 
 static Display *dpy;
 static int screens;
@@ -16,7 +17,6 @@ typedef struct {
 	Window root;
 	int width;
 	int height;
-	int depth;
 	SDL_Texture *image;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
@@ -37,23 +37,12 @@ void captureScreen(Monitor *screen){
 	SDL_FreeSurface(surface);
 }
 
-int main(int argc, char **argv) {
-	// Initialization
-	dpy = XOpenDisplay(NULL); // X11
-	if (!dpy){ fprintf(stderr, "Could not open XDisplay\n"); return 1; }
-	screens = ScreenCount(dpy);
-	SDL_Init(SDL_INIT_VIDEO); // SDL
-	IMG_Init(SDL_IMAGE_FLAGS); // SDL_image
-
-	Monitor *monitors = malloc(sizeof(Monitor) * screens);
-
-	for (int i=0; i<screens; i++){
-		// Information about each screen
+void setupMonitors(Monitor *monitors, int num_screens) {
+	for (int i=0; i<num_screens; i++){
 		monitors[i] = (Monitor) {
 			.root = RootWindow(dpy, i),
 			.width = DisplayWidth(dpy, i),
 			.height = DisplayHeight(dpy, i),
-			.depth = DefaultDepth(dpy, i),
 		};
 		monitors[i].window = SDL_CreateWindowFrom((void*) monitors[i].root);
 		monitors[i].renderer = SDL_CreateRenderer(monitors[i].window, -1, SDL_FLAGS);
@@ -61,19 +50,67 @@ int main(int argc, char **argv) {
 		// Scrape the root window into a texture
 		captureScreen(&monitors[i]);
 	}
+}
 
-	// Load wallpaper into texture
-	SDL_Texture *src = monitors[0].image;
-	SDL_Texture *dst = IMG_LoadTexture(monitors[0].renderer, "/usr/local/share/background");
+void randomFile(char *path, char *buf, int size) {
+	int count = 0;
+	DIR *dPtr;
+	struct dirent *ePtr;
+	int random;
 
+	// Count number of entries
+	dPtr = opendir(path);
+	while ((ePtr = readdir(dPtr)) != NULL) {
+		count++;
+	};
+	count = count - 2; // Factor out '.' and '..'
+
+	random = rand() % count;
+	rewinddir(dPtr);
+	for (int i=0; i < random + 2; i++)
+		ePtr = readdir(dPtr);
+
+	// Copy name to buffer
+	int len = strlen(ePtr->d_name);
+	strncpy(buf, ePtr->d_name, len);
+	buf[len] = '\0';
+
+	closedir(dPtr);
+	return;
+}
+
+int main(int argc, char **argv) {
 	int long_delay = 500;
 	int transition_delay = 50;
-
 	int counter = 0;
 	double alpha_step = 255.0 / transition_delay;
 
-	while(1){
+	char *path = "/usr/local/share/wallpaper";
+	int len = strlen(path);
 
+	int buf_size = 100;
+	char *fullpath = malloc((len + buf_size + 1)*sizeof(char));
+	strncpy(fullpath, path, len);
+	fullpath[len] = '/';
+
+	char *file = fullpath + len + 1;
+
+	// Initialization
+	dpy = XOpenDisplay(NULL); // X11
+	if (!dpy){ fprintf(stderr, "Could not open XDisplay\n"); return 1; }
+	screens = ScreenCount(dpy);
+	SDL_Init(SDL_INIT_VIDEO); // SDL
+	IMG_Init(SDL_IMAGE_FLAGS); // SDL_image
+
+	// Get information about screen setup
+	Monitor *monitors = malloc(sizeof(Monitor) * screens);
+	setupMonitors(monitors, screens);
+
+	// Load initial image into renderer
+	SDL_Texture *src = monitors[0].image;
+	SDL_Texture *dst = IMG_LoadTexture(monitors[0].renderer, "/usr/local/share/background");
+
+	while(1){
 		// Transition between wallpapers logic
 		if (counter < transition_delay) {
 			// Copy source image
@@ -83,12 +120,10 @@ int main(int argc, char **argv) {
 			SDL_SetTextureBlendMode(dst, SDL_BLENDMODE_BLEND);
 			SDL_SetTextureAlphaMod(dst, counter*alpha_step);
 			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
-		
 		// Otherwise just show the image
 		} else {
 			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
 		}
-
 		SDL_RenderPresent(monitors[0].renderer);
 
 		// Event handling
@@ -97,11 +132,22 @@ int main(int argc, char **argv) {
 		if (event.type == SDL_QUIT)
 			break;
 
+		// Setup to change wallpaper
+		if (counter == 499) {
+			randomFile(path, file, buf_size);
+			src = dst;
+			dst = IMG_LoadTexture(monitors[0].renderer, fullpath);
+		}
+
 		counter = (counter + 1) % long_delay;
 	}
 
 	// Cleanup
+	SDL_DestroyTexture(src);
+	SDL_DestroyTexture(dst);
 	SDL_Quit();
 	IMG_Quit();
 	XCloseDisplay(dpy);
+
+	return 0;
 }

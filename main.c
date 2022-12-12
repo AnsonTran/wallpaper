@@ -134,6 +134,7 @@ int main(int argc, char **argv) {
 
 		// Setup to change wallpaper
 		if (counter == 499) {
+			SDL_DestroyTexture(src);
 			randomFile(path, file, buf_size);
 			src = dst;
 			dst = IMG_LoadTexture(monitors[0].renderer, fullpath);

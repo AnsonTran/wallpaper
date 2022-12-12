@@ -25,7 +25,7 @@ typedef struct {
 void captureScreen(Monitor *screen){
 	XImage *capture = XGetImage(dpy, screen->root, 0, 0, screen->width, screen->height, AllPlanes, ZPixmap);
 
-	// Create an SDL surface of the screen
+	// Create an SDL surface from the screenshot
 	SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(
 		capture->data, screen->width, screen->height, 32,
 		capture->bytes_per_line,
@@ -61,20 +61,43 @@ int main(int argc, char **argv) {
 		// Scrape the root window into a texture
 		captureScreen(&monitors[i]);
 	}
-	
+
 	// Load wallpaper into texture
-	SDL_Texture *wallpaper = IMG_LoadTexture(monitors[0].renderer, "/usr/local/share/background");
+	SDL_Texture *src = monitors[0].image;
+	SDL_Texture *dst = IMG_LoadTexture(monitors[0].renderer, "/usr/local/share/background");
+
+	int long_delay = 500;
+	int transition_delay = 50;
+
+	int counter = 0;
+	double alpha_step = 255.0 / transition_delay;
 
 	while(1){
-		//SDL_SetTextureBlendMode(wallpaper, SDL_BLENDMODE_BLEND);
-		//SDL_SetTextureAlphaMod(wallpaper,1);
-		SDL_RenderCopy(monitors[0].renderer, monitors[0].image, NULL, NULL);
-		//SDL_RenderCopy(monitors[0].renderer, wallpaper, NULL, NULL);
+
+		// Transition between wallpapers logic
+		if (counter < transition_delay) {
+			// Copy source image
+			SDL_RenderCopy(monitors[0].renderer, src, NULL, NULL);
+
+			// Copy destination image with gradually increasing alpha
+			SDL_SetTextureBlendMode(dst, SDL_BLENDMODE_BLEND);
+			SDL_SetTextureAlphaMod(dst, counter*alpha_step);
+			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
+		
+		// Otherwise just show the image
+		} else {
+			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
+		}
+
 		SDL_RenderPresent(monitors[0].renderer);
+
+		// Event handling
 		SDL_Event event;
 		SDL_PollEvent(&event);
 		if (event.type == SDL_QUIT)
 			break;
+
+		counter = (counter + 1) % long_delay;
 	}
 
 	// Cleanup

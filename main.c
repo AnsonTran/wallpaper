@@ -3,6 +3,7 @@
 #include <string.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
+#include <Imlib2.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include "utils.h"
@@ -21,16 +22,12 @@ typedef struct {
 	SDL_Renderer *renderer;
 } Monitor;
 
-// Capture root window of each screen and store into pixmap
 void captureScreen(Monitor *screen){
-	XImage *capture = XGetImage(dpy, screen->root, 0, 0, screen->width, screen->height, 0, ZPixmap);
+	XImage *capture = XGetImage(dpy, screen->root, 0, 0, screen->width, screen->height, AllPlanes, ZPixmap);
 
 	// Create an SDL surface of the screen
 	SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(
-		capture->data,
-		screen->width,
-		screen->height,
-		screen->depth,
+		capture->data, screen->width, screen->height, 32,
 		capture->bytes_per_line,
 		capture->red_mask, capture->green_mask, capture->blue_mask, 0
 	);
@@ -69,7 +66,10 @@ int main(int argc, char **argv) {
 	SDL_Texture *wallpaper = IMG_LoadTexture(monitors[0].renderer, "/usr/local/share/background");
 
 	while(1){
-		SDL_RenderCopy(monitors[0].renderer, wallpaper, NULL, NULL);
+		//SDL_SetTextureBlendMode(wallpaper, SDL_BLENDMODE_BLEND);
+		//SDL_SetTextureAlphaMod(wallpaper,1);
+		SDL_RenderCopy(monitors[0].renderer, monitors[0].image, NULL, NULL);
+		//SDL_RenderCopy(monitors[0].renderer, wallpaper, NULL, NULL);
 		SDL_RenderPresent(monitors[0].renderer);
 		SDL_Event event;
 		SDL_PollEvent(&event);

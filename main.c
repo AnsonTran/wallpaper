@@ -107,10 +107,23 @@ int main(int argc, char **argv) {
 			SDL_SetTextureBlendMode(dst, SDL_BLENDMODE_BLEND);
 			SDL_SetTextureAlphaMod(dst, counter*alpha_step);
 			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
-		// Otherwise just show the image
+
+		// Destroy source texture and show destination texture
+		} else if (counter == arguments.fade) {
+			SDL_DestroyTexture(src);
+			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
+
+		// Setup for the next wallpaper
+		} else if (counter == arguments.ticks - 1) {
+			randomFile(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
+			src = dst;
+			dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
+
+		// Display the wallpaper normally
 		} else {
 			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
 		}
+
 		SDL_RenderPresent(monitors[0].renderer);
 
 		// Event handling
@@ -118,14 +131,6 @@ int main(int argc, char **argv) {
 		SDL_PollEvent(&event);
 		if (event.type == SDL_QUIT)
 			break;
-
-		// Setup to change wallpaper
-		if (counter == arguments.ticks - 1) {
-			SDL_DestroyTexture(src);
-			randomFile(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
-			src = dst;
-			dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
-		}
 
 		counter = (counter + 1) % arguments.ticks;
 	}

@@ -1,11 +1,8 @@
 #include "utils.h"
+#include "parser.h"
 
 static Display *dpy;
 static int screens;
-
-const char *argp_program_version = "1.0";
-const char *argp_program_bug_address = "<trananson@protonmail.com>";
-static char doc[] = "Waal - X11 wallpaper using SDL";
 
 void captureScreen(Monitor *screen){
 	XImage *capture = XGetImage(dpy, screen->root, 0, 0, screen->width, screen->height, AllPlanes, ZPixmap);
@@ -65,8 +62,15 @@ void randomFile(char *path, char *buf, int size) {
 }
 
 int main(int argc, char **argv) {
-	static struct argp argp = { 0, 0, 0, doc };
-	argp_parse(&argp, argc, argv, 0, 0, 0);
+	// Parse arguments
+	Args arguments = {
+		.directory = NULL,
+		.initial_image = NULL,
+		.randomize = 0,
+		.delay = 50,
+		.transition_delay = 1000
+	};
+	parse_args(argc, argv, &arguments);
 
 	int long_delay = 1000;
 	int transition_delay = 50;

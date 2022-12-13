@@ -90,8 +90,8 @@ int main(int argc, char **argv) {
 	if (arguments.initial_image != NULL)
 		dst = IMG_LoadTexture(monitors[0].renderer, arguments.initial_image);
 	else {
-		randomFile(arguments.directory, arguments.path_buf_ptr, FILE_BUF_SIZE);
-		dst = IMG_LoadTexture(monitors[0].renderer, arguments.path_buf);
+		randomFile(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
+		dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
 	}
 
 	int counter = 0;
@@ -122,9 +122,9 @@ int main(int argc, char **argv) {
 		// Setup to change wallpaper
 		if (counter == arguments.ticks - 1) {
 			SDL_DestroyTexture(src);
-			randomFile(arguments.directory, arguments.path_buf_ptr, FILE_BUF_SIZE);
+			randomFile(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
 			src = dst;
-			dst = IMG_LoadTexture(monitors[0].renderer, arguments.path_buf);
+			dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
 		}
 
 		counter = (counter + 1) % arguments.ticks;

@@ -6,8 +6,8 @@
 #define FILE_BUF_SIZE			255
 
 typedef struct {
-	char *path_buf; // Buffer that contains the full path
-	char *path_buf_ptr; // Pointer to buffer where file names should be written
+	char *path; // Buffer that contains the full path
+	char *file_buf; // Pointer to buffer where file names should be written
 	char *directory;
 	char *initial_image;
 	int randomize;

@@ -11,8 +11,8 @@ typedef struct {
 	char *directory;
 	char *initial_image;
 	int randomize;
-	int delay;
-	int transition_delay;
+	int duration;
+	int fade;
 	int ticks;
 } Args;
 

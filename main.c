@@ -67,8 +67,8 @@ int main(int argc, char **argv) {
 		.directory = NULL,
 		.initial_image = NULL,
 		.randomize = 0,
-		.delay = 1000,
-		.transition_delay = 50
+		.duration = 1000,
+		.fade = 50
 	};
 	parse_args(argc, argv, &arguments);
 
@@ -95,11 +95,11 @@ int main(int argc, char **argv) {
 	}
 
 	int counter = 0;
-	double alpha_step = (double) MAX_ALPHA / arguments.transition_delay;
+	double alpha_step = (double) MAX_ALPHA / arguments.fade;
 
 	while(1){
 		// Transition between wallpapers logic
-		if (counter < arguments.transition_delay) {
+		if (counter < arguments.fade) {
 			// Copy source image
 			SDL_RenderCopy(monitors[0].renderer, src, NULL, NULL);
 

@@ -15,14 +15,14 @@ error_t parse_opt(int key, char *arg, struct argp_state *state) {
 			arguments->initial_image = arg;
 			break;
 		case 'd':
-			arguments->delay = atoi(arg);
-			if (arguments->delay == 0)
-				argp_error(state, "Delay must be a non-zero number");
+			arguments->duration = atoi(arg);
+			if (arguments->duration == 0)
+				argp_error(state, "Duration must be a non-zero number");
 			break;
-		case 't':
-			arguments->transition_delay = atoi(arg);
-			if (arguments->transition_delay == 0)
-				argp_error(state, "Transition delay must be a non-zero number");
+		case 'f':
+			arguments->fade = atoi(arg);
+			if (arguments->fade == 0)
+				argp_error(state, "Duration must be a non-zero number");
 			break;
 		case ARGP_KEY_ARG:
 			// Too many arguments
@@ -32,7 +32,7 @@ error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case ARGP_KEY_END:
 			// Ticks is the total ticks per cycle
-			arguments->ticks = arguments->delay + arguments->transition_delay;
+			arguments->ticks = arguments->duration + arguments->fade;
 
 			int dir_len = strlen(arguments->directory);
 
@@ -55,8 +55,8 @@ void parse_args(int argc, char **argv, Args *arguments) {
 	struct argp_option options[] = {
 		{ "randomize", 'r', 0, 0, "Cycle through wallpapers at random" },
 		{ "initial", 'i', "FILE", 0, "Choose a starting wallpaper" },
-		{ "delay", 'd', "SECS", 0, "Wallpaper duration" },
-		{ "transition", 't', "SECS", 0, "Duration of transition between wallpapers" },
+		{ "duration", 'd', "SECS", 0, "Wallpaper duration" },
+		{ "fade", 'f', "SECS", 0, "Fade duration between wallpapers" },
 		{ 0 }
 	};
 	char doc[] = "Waal - X11 wallpaper using SDL";

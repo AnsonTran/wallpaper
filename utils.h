@@ -3,13 +3,14 @@
 #include <X11/Xlib.h>
 #include <dirent.h>
 
+#ifndef UTILS_H
+#define UTILS_H
+
 #define SDL_IMAGE_FLAGS		IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_TIF | IMG_INIT_WEBP | IMG_INIT_JXL | IMG_INIT_AVIF
 #define SDL_FLAGS					SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
 #define SDL_PIXELFORMAT		SDL_PIXELFORMAT_ARGB8888
+#define MAX_ALPHA					255
 
-
-#ifndef UTILS_H
-#define UTILS_H
 
 typedef struct {
 	Window root;

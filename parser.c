@@ -1,5 +1,6 @@
 #include "parser.h"
 #include <stdlib.h>
+#include <string.h>
 
 const char *argp_program_version = "1.0";
 const char *argp_program_bug_address = "<trananson@protonmail.com>";
@@ -30,8 +31,20 @@ error_t parse_opt(int key, char *arg, struct argp_state *state) {
 			arguments->directory = arg;
       break;
     case ARGP_KEY_END:
-      if (state->arg_num < 1)
-        argp_usage(state);
+			// Ticks is the total ticks per cycle
+			arguments->ticks = arguments->delay + arguments->transition_delay;
+
+			int dir_len = strlen(arguments->directory);
+
+			// Copy directory string to the buffer
+			char *path_buf = arguments->path_buf;
+			path_buf = malloc((dir_len + FILE_BUF_SIZE + 1)*sizeof(char));
+			strncpy(path_buf, arguments->directory, dir_len);
+			path_buf[dir_len] = '/';
+
+			// Terminate string and set pointer to the end of the buffer
+			arguments->path_buf_ptr = arguments->path_buf + dir_len + 1;
+			arguments->path_buf_ptr[0] = '\0';
       break;
     default:
       return ARGP_ERR_UNKNOWN;
@@ -43,8 +56,8 @@ void parse_args(int argc, char **argv, Args *arguments) {
 	struct argp_option options[] = {
 		{ "randomize", 'r', 0, 0, "Cycle through wallpapers at random" },
 		{ "initial", 'i', "FILE", 0, "Choose a starting wallpaper" },
-		{ "delay", 'd', "SECS", 0, "Seconds before transitioning to the next wallpaper" },
-		{ "transition", 't', "SECS", 0, "How long each transition takes. Must be less than the delay" },
+		{ "delay", 'd', "SECS", 0, "Wallpaper duration" },
+		{ "transition", 't', "SECS", 0, "Duration of transition between wallpapers" },
 		{ 0 }
 	};
 	char doc[] = "Waal - X11 wallpaper using SDL";

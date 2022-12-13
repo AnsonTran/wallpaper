@@ -67,25 +67,10 @@ int main(int argc, char **argv) {
 		.directory = NULL,
 		.initial_image = NULL,
 		.randomize = 0,
-		.delay = 50,
-		.transition_delay = 1000
+		.delay = 1000,
+		.transition_delay = 50
 	};
 	parse_args(argc, argv, &arguments);
-
-	int long_delay = 1000;
-	int transition_delay = 50;
-	int counter = 0;
-	double alpha_step = 255.0 / transition_delay;
-
-	char *path = "/usr/local/share/wallpaper";
-	int len = strlen(path);
-
-	int buf_size = 100;
-	char *fullpath = malloc((len + buf_size + 1)*sizeof(char));
-	strncpy(fullpath, path, len);
-	fullpath[len] = '/';
-
-	char *file = fullpath + len + 1;
 
 	// Initialization
 	dpy = XOpenDisplay(NULL); // X11
@@ -98,13 +83,23 @@ int main(int argc, char **argv) {
 	Monitor *monitors = malloc(sizeof(Monitor) * screens);
 	setupMonitors(monitors, screens);
 
-	// Load initial image into renderer
+	// Load images into renderer
 	SDL_Texture *src = monitors[0].image;
-	SDL_Texture *dst = IMG_LoadTexture(monitors[0].renderer, "/usr/local/share/background");
+	SDL_Texture *dst;
+
+	if (arguments.initial_image != NULL)
+		dst = IMG_LoadTexture(monitors[0].renderer, arguments.initial_image);
+	else {
+		randomFile(arguments.directory, arguments.path_buf_ptr, FILE_BUF_SIZE);
+		dst = IMG_LoadTexture(monitors[0].renderer, arguments.path_buf);
+	}
+
+	int counter = 0;
+	double alpha_step = (double) MAX_ALPHA / arguments.transition_delay;
 
 	while(1){
 		// Transition between wallpapers logic
-		if (counter < transition_delay) {
+		if (counter < arguments.transition_delay) {
 			// Copy source image
 			SDL_RenderCopy(monitors[0].renderer, src, NULL, NULL);
 
@@ -125,14 +120,14 @@ int main(int argc, char **argv) {
 			break;
 
 		// Setup to change wallpaper
-		if (counter == 499) {
+		if (counter == arguments.ticks - 1) {
 			SDL_DestroyTexture(src);
-			randomFile(path, file, buf_size);
+			randomFile(arguments.directory, arguments.path_buf_ptr, FILE_BUF_SIZE);
 			src = dst;
-			dst = IMG_LoadTexture(monitors[0].renderer, fullpath);
+			dst = IMG_LoadTexture(monitors[0].renderer, arguments.path_buf);
 		}
 
-		counter = (counter + 1) % long_delay;
+		counter = (counter + 1) % arguments.ticks;
 	}
 
 	// Cleanup

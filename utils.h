@@ -23,6 +23,6 @@ typedef struct {
 
 void capture_screen(Monitor *screen);
 void setup_monitors(Monitor *monitors, int num_screens);
-void random_file(char *path, char *buf, int size);
+int random_file(char *path, int file_count, char *buf, int size);
 
 #endif

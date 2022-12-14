@@ -48,35 +48,33 @@ int count_files(char *path) {
 	while ((ent_ptr = readdir(dir_ptr)) != NULL) {
 		count++;
 	}
+	// Don't count '.' and '..'
 	return count - 2;
 }
 
-
-void random_file(char *path, char *buf, int size) {
-	int count = 0;
-	DIR *dPtr;
-	struct dirent *ePtr;
+int random_file(char *path, int file_count, char *buf, int size) {
+	DIR *dir_ptr;
+	struct dirent *ent_ptr;
 	int random;
+	int pos = 0;
 
-	// Count number of entries
-	dPtr = opendir(path);
-	while ((ePtr = readdir(dPtr)) != NULL) {
-		count++;
-	};
-	count = count - 2; // Factor out '.' and '..'
+	// Open the directory
+	dir_ptr = opendir(path);
+	if (dir_ptr == NULL)
+		return -1;
 
-	random = rand() % count;
-	rewinddir(dPtr);
-	for (int i=0; i < random + 2; i++)
-		ePtr = readdir(dPtr);
+	random = rand() % file_count;
+
+	// Move pointer to the random file or until last entry
+	while (pos++ < random + 2 && (ent_ptr = readdir(dir_ptr)) != NULL);
 
 	// Copy name to buffer
-	int len = strlen(ePtr->d_name);
-	strncpy(buf, ePtr->d_name, len);
+	int len = strlen(ent_ptr->d_name);
+	strncpy(buf, ent_ptr->d_name, len);
 	buf[len] = '\0';
 
-	closedir(dPtr);
-	return;
+	closedir(dir_ptr);
+	return 0;
 }
 
 int main(int argc, char **argv) {
@@ -91,8 +89,7 @@ int main(int argc, char **argv) {
 	parse_args(argc, argv, &arguments);
 
 	// Initialization
-	dpy = XOpenDisplay(NULL); // X11
-	if (!dpy){
+	if (!(dpy = XOpenDisplay(NULL))){
 		fprintf(stderr, "Could not open XDisplay\n");
 		return 1;
 	}
@@ -116,10 +113,12 @@ int main(int argc, char **argv) {
 	SDL_Texture *src = monitors[0].image;
 	SDL_Texture *dst;
 
+	int file_count = count_files(arguments.directory);
+
 	if (arguments.initial_image != NULL)
 		dst = IMG_LoadTexture(monitors[0].renderer, arguments.initial_image);
 	else {
-		random_file(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
+		random_file(arguments.directory, file_count, arguments.file_buf, FILE_BUF_SIZE);
 		dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
 	}
 
@@ -144,7 +143,7 @@ int main(int argc, char **argv) {
 
 		// Setup for the next wallpaper
 		} else if (counter == arguments.ticks - 1) {
-			random_file(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
+			random_file(arguments.directory, file_count, arguments.file_buf, FILE_BUF_SIZE);
 			src = dst;
 			dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
 

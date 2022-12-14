@@ -34,6 +34,23 @@ void setup_monitors(Monitor *monitors, int num_screens) {
 	}
 }
 
+int count_files(char *path) {
+	int count = 0;
+	DIR *dir_ptr;
+	struct dirent *ent_ptr;
+
+	// Open the directory
+	dir_ptr = opendir(path);
+	if (dir_ptr == NULL)
+		return -1;
+
+	// Count number of entries
+	while ((ent_ptr = readdir(dir_ptr)) != NULL) {
+		count++;
+	}
+	return count - 2;
+}
+
 
 void random_file(char *path, char *buf, int size) {
 	int count = 0;
@@ -75,14 +92,21 @@ int main(int argc, char **argv) {
 
 	// Initialization
 	dpy = XOpenDisplay(NULL); // X11
-	if (!dpy)
-		fprintf(stderr, "Could not open XDisplay\n"); return 1;
+	if (!dpy){
+		fprintf(stderr, "Could not open XDisplay\n");
+		return 1;
+	}
 	screens = ScreenCount(dpy);
 
-	if (SDL_Init(SDL_INIT_VIDEO) != 0)
-		fprintf(stderr, "Failed to initialize SDL"); return 2;// SDL
-	if (IMG_Init(SDL_IMAGE_FLAGS) != 0)
-		fprintf(stderr, "Failed to initialize SDL_Image"); return 3;// SDL_image
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+		fprintf(stderr, "Failed to initialize SDL");
+		return 2;
+	}
+
+	if (IMG_Init(SDL_IMAGE_FLAGS) == 0) {
+		fprintf(stderr, "Failed to initialize SDL_Image");
+		return 3;
+	}
 
 	// Get information about screen setup
 	Monitor *monitors = malloc(sizeof(Monitor) * screens);

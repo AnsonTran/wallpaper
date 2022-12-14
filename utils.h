@@ -21,8 +21,8 @@ typedef struct {
 	SDL_Renderer *renderer;
 } Monitor;
 
-void captureScreen(Monitor *screen);
-void setupMonitors(Monitor *monitors, int num_screens);
-void randomFile(char *path, char *buf, int size);
+void capture_screen(Monitor *screen);
+void setup_monitors(Monitor *monitors, int num_screens);
+void random_file(char *path, char *buf, int size);
 
 #endif

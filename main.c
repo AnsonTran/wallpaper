@@ -4,7 +4,7 @@
 static Display *dpy;
 static int screens;
 
-void captureScreen(Monitor *screen){
+void capture_screen(Monitor *screen){
 	XImage *capture = XGetImage(dpy, screen->root, 0, 0, screen->width, screen->height, AllPlanes, ZPixmap);
 
 	// Create an SDL surface from the screenshot
@@ -19,7 +19,7 @@ void captureScreen(Monitor *screen){
 	SDL_FreeSurface(surface);
 }
 
-void setupMonitors(Monitor *monitors, int num_screens) {
+void setup_monitors(Monitor *monitors, int num_screens) {
 	for (int i=0; i<num_screens; i++){
 		monitors[i] = (Monitor) {
 			.root = RootWindow(dpy, i),
@@ -30,11 +30,12 @@ void setupMonitors(Monitor *monitors, int num_screens) {
 		monitors[i].renderer = SDL_CreateRenderer(monitors[i].window, -1, SDL_FLAGS);
 
 		// Scrape the root window into a texture
-		captureScreen(&monitors[i]);
+		capture_screen(&monitors[i]);
 	}
 }
 
-void randomFile(char *path, char *buf, int size) {
+
+void random_file(char *path, char *buf, int size) {
 	int count = 0;
 	DIR *dPtr;
 	struct dirent *ePtr;
@@ -85,7 +86,7 @@ int main(int argc, char **argv) {
 
 	// Get information about screen setup
 	Monitor *monitors = malloc(sizeof(Monitor) * screens);
-	setupMonitors(monitors, screens);
+	setup_monitors(monitors, screens);
 
 	// Load images into renderer
 	SDL_Texture *src = monitors[0].image;
@@ -94,7 +95,7 @@ int main(int argc, char **argv) {
 	if (arguments.initial_image != NULL)
 		dst = IMG_LoadTexture(monitors[0].renderer, arguments.initial_image);
 	else {
-		randomFile(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
+		random_file(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
 		dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
 	}
 
@@ -119,7 +120,7 @@ int main(int argc, char **argv) {
 
 		// Setup for the next wallpaper
 		} else if (counter == arguments.ticks - 1) {
-			randomFile(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
+			random_file(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
 			src = dst;
 			dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
 

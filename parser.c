@@ -25,12 +25,14 @@ error_t parse_opt(int key, char *arg, struct argp_state *state) {
 				argp_error(state, "Duration must be a non-zero number");
 			break;
 		case ARGP_KEY_ARG:
-			// Too many arguments
-      if (state->arg_num > 1)
+      if (state->arg_num != 1)
         argp_usage(state);
 			arguments->directory = arg;
       break;
     case ARGP_KEY_END:
+			if (!arguments->directory)
+				argp_usage(state);
+
 			// Ticks is the total ticks per cycle
 			arguments->ticks = arguments->duration + arguments->fade;
 

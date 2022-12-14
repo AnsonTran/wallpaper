@@ -74,10 +74,14 @@ int main(int argc, char **argv) {
 
 	// Initialization
 	dpy = XOpenDisplay(NULL); // X11
-	if (!dpy){ fprintf(stderr, "Could not open XDisplay\n"); return 1; }
+	if (!dpy)
+		fprintf(stderr, "Could not open XDisplay\n"); return 1;
 	screens = ScreenCount(dpy);
-	SDL_Init(SDL_INIT_VIDEO); // SDL
-	IMG_Init(SDL_IMAGE_FLAGS); // SDL_image
+
+	if (SDL_Init(SDL_INIT_VIDEO) != 0)
+		fprintf(stderr, "Failed to initialize SDL"); return 2;// SDL
+	if (IMG_Init(SDL_IMAGE_FLAGS) != 0)
+		fprintf(stderr, "Failed to initialize SDL_Image"); return 3;// SDL_image
 
 	// Get information about screen setup
 	Monitor *monitors = malloc(sizeof(Monitor) * screens);
@@ -136,6 +140,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Cleanup
+	free(arguments.path);
 	SDL_DestroyTexture(src);
 	SDL_DestroyTexture(dst);
 	SDL_Quit();

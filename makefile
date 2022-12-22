@@ -1,7 +1,7 @@
 all: compile
 
 compile:
-	gcc -lSDL2 -lSDL2_image -lX11 main.c parser.c -o waal
+	gcc -lSDL2 -lSDL2_image -lX11 main.c parser.c -o fiwall
 
-install: waal
-	cp waal $(HOME)/Scripts/waal
+install: fiwall
+	cp fiwall $(HOME)/Scripts/fiwall

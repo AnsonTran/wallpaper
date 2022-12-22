@@ -3,8 +3,10 @@
 
 static Display *dpy;
 static int screens;
+static int file_count;
+static Args arguments;
 
-void capture_screen(Monitor *screen){
+SDL_Texture *capture_screen(Monitor *screen){
 	XImage *capture = XGetImage(dpy, screen->root, 0, 0, screen->width, screen->height, AllPlanes, ZPixmap);
 
 	// Create an SDL surface from the screenshot
@@ -15,22 +17,33 @@ void capture_screen(Monitor *screen){
 	);
 
 	// Convert to a texture
-	screen->image = SDL_CreateTextureFromSurface(screen->renderer, surface);
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(screen->renderer, surface);
 	SDL_FreeSurface(surface);
+	return texture;
 }
 
 void setup_monitors(Monitor *monitors, int num_screens) {
+	Monitor *monitor_ptr = monitors;
 	for (int i=0; i<num_screens; i++){
-		monitors[i] = (Monitor) {
+		*monitor_ptr = (Monitor) {
 			.root = RootWindow(dpy, i),
 			.width = DisplayWidth(dpy, i),
 			.height = DisplayHeight(dpy, i),
 		};
-		monitors[i].window = SDL_CreateWindowFrom((void*) monitors[i].root);
-		monitors[i].renderer = SDL_CreateRenderer(monitors[i].window, -1, SDL_FLAGS);
+		monitor_ptr->window = SDL_CreateWindowFrom((void*) monitor_ptr->root);
+		monitor_ptr->renderer = SDL_CreateRenderer(monitor_ptr->window, -1, SDL_FLAGS);
 
-		// Scrape the root window into a texture
-		capture_screen(&monitors[i]);
+		// Load the source image
+		monitor_ptr->src = capture_screen(monitor_ptr);
+
+		// Load the destination image
+		if (arguments.initial_image != NULL)
+			monitor_ptr->dst = IMG_LoadTexture(monitor_ptr->renderer, arguments.initial_image);
+		else {
+			random_file(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
+			monitor_ptr->dst = IMG_LoadTexture(monitor_ptr->renderer, arguments.path);
+		}
+		monitor_ptr++;
 	}
 }
 
@@ -45,14 +58,14 @@ int count_files(char *path) {
 		return -1;
 
 	// Count number of entries
-	while ((ent_ptr = readdir(dir_ptr)) != NULL) {
+	while ((ent_ptr = readdir(dir_ptr)) != NULL)
 		count++;
-	}
+
 	// Don't count '.' and '..'
 	return count - 2;
 }
 
-int random_file(char *path, int file_count, char *buf, int size) {
+int random_file(char *path, char *buf, int size) {
 	DIR *dir_ptr;
 	struct dirent *ent_ptr;
 	int random;
@@ -79,7 +92,7 @@ int random_file(char *path, int file_count, char *buf, int size) {
 
 int main(int argc, char **argv) {
 	// Parse arguments
-	Args arguments = {
+	arguments = (Args) {
 		.directory = NULL,
 		.initial_image = NULL,
 		.randomize = 0,
@@ -105,54 +118,46 @@ int main(int argc, char **argv) {
 		return 3;
 	}
 
-	// Get information about screen setup
+	// Count files in the directory
+	file_count = count_files(arguments.directory);
+
+	// Setup each monitor
 	Monitor *monitors = malloc(sizeof(Monitor) * screens);
 	setup_monitors(monitors, screens);
-
-	// Load images into renderer
-	SDL_Texture *src = monitors[0].image;
-	SDL_Texture *dst;
-
-	int file_count = count_files(arguments.directory);
-
-	if (arguments.initial_image != NULL)
-		dst = IMG_LoadTexture(monitors[0].renderer, arguments.initial_image);
-	else {
-		random_file(arguments.directory, file_count, arguments.file_buf, FILE_BUF_SIZE);
-		dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
-	}
 
 	int counter = 0;
 	double alpha_step = (double) MAX_ALPHA / arguments.fade;
 
 	while(1){
-		// Transition between wallpapers logic
-		if (counter < arguments.fade) {
-			// Copy source image
-			SDL_RenderCopy(monitors[0].renderer, src, NULL, NULL);
+		Monitor *monitor = monitors;
+		for (int i=0; i<screens; i++) {
+			// Transition between wallpapers logic
+			if (counter < arguments.fade) {
+				SDL_SetTextureBlendMode(monitor->dst, SDL_BLENDMODE_BLEND);
+				SDL_SetTextureAlphaMod(monitor->dst, counter*alpha_step);
 
-			// Copy destination image with gradually increasing alpha
-			SDL_SetTextureBlendMode(dst, SDL_BLENDMODE_BLEND);
-			SDL_SetTextureAlphaMod(dst, counter*alpha_step);
-			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
+			// Destroy source texture and show destination texture
+			} else if (counter == arguments.fade) {
+				SDL_DestroyTexture(monitor->src);
+				monitor->src = NULL;
 
-		// Destroy source texture and show destination texture
-		} else if (counter == arguments.fade) {
-			SDL_DestroyTexture(src);
-			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
+			// Setup for the next wallpaper
+			} else if (counter == arguments.ticks - 1) {
+				random_file(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
+				monitor->src = monitor->dst;
+				monitor->dst = IMG_LoadTexture(monitor->renderer, arguments.path);
+			}
 
-		// Setup for the next wallpaper
-		} else if (counter == arguments.ticks - 1) {
-			random_file(arguments.directory, file_count, arguments.file_buf, FILE_BUF_SIZE);
-			src = dst;
-			dst = IMG_LoadTexture(monitors[0].renderer, arguments.path);
+			if (monitor->src != NULL)
+				SDL_RenderCopy(monitor->renderer, monitor->src, NULL, NULL);
 
-		// Display the wallpaper normally
-		} else {
-			SDL_RenderCopy(monitors[0].renderer, dst, NULL, NULL);
+			if (monitor->dst != NULL)
+				SDL_RenderCopy(monitor->renderer, monitor->dst, NULL, NULL);
+
+			SDL_RenderPresent(monitor->renderer);
+
+			monitor++;
 		}
-
-		SDL_RenderPresent(monitors[0].renderer);
 
 		// Event handling
 		SDL_Event event;
@@ -165,8 +170,6 @@ int main(int argc, char **argv) {
 
 	// Cleanup
 	free(arguments.path);
-	SDL_DestroyTexture(src);
-	SDL_DestroyTexture(dst);
 	SDL_Quit();
 	IMG_Quit();
 	XCloseDisplay(dpy);

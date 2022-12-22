@@ -16,13 +16,14 @@ typedef struct {
 	Window root;
 	int width;
 	int height;
-	SDL_Texture *image;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
+	SDL_Texture *src;
+	SDL_Texture *dst;
 } Monitor;
 
-void capture_screen(Monitor *screen);
+SDL_Texture *capture_screen(Monitor *screen);
 void setup_monitors(Monitor *monitors, int num_screens);
-int random_file(char *path, int file_count, char *buf, int size);
+int random_file(char *path, char *buf, int size);
 
 #endif

@@ -131,28 +131,31 @@ int main(int argc, char **argv) {
 	while(1){
 		Monitor *monitor = monitors;
 		for (int i=0; i<screens; i++) {
-			// Transition between wallpapers logic
+			// Copy dst onto src with increasing alpha
 			if (counter < arguments.fade) {
+				SDL_RenderCopy(monitor->renderer, monitor->src, NULL, NULL);
+
 				SDL_SetTextureBlendMode(monitor->dst, SDL_BLENDMODE_BLEND);
 				SDL_SetTextureAlphaMod(monitor->dst, counter*alpha_step);
+				SDL_RenderCopy(monitor->renderer, monitor->dst, NULL, NULL);
 
-			// Destroy source texture and show destination texture
+			// Destroy src texture and show dst texture
 			} else if (counter == arguments.fade) {
 				SDL_DestroyTexture(monitor->src);
 				monitor->src = NULL;
+				SDL_RenderCopy(monitor->renderer, monitor->dst, NULL, NULL);
 
 			// Setup for the next wallpaper
 			} else if (counter == arguments.ticks - 1) {
 				random_file(arguments.directory, arguments.file_buf, FILE_BUF_SIZE);
 				monitor->src = monitor->dst;
 				monitor->dst = IMG_LoadTexture(monitor->renderer, arguments.path);
-			}
-
-			if (monitor->src != NULL)
 				SDL_RenderCopy(monitor->renderer, monitor->src, NULL, NULL);
-
-			if (monitor->dst != NULL)
+			
+			// Display the wallpaper normally
+			} else {
 				SDL_RenderCopy(monitor->renderer, monitor->dst, NULL, NULL);
+			}
 
 			SDL_RenderPresent(monitor->renderer);
 

@@ -61,7 +61,7 @@ void parse_args(int argc, char **argv, Args *arguments) {
 		{ "fade", 'f', "SECS", 0, "Fade duration between wallpapers" },
 		{ 0 }
 	};
-	char doc[] = "Waal - X11 wallpaper using SDL";
+	char doc[] = "wallpaper - Simple X11 wallpaper script using SDL2";
 	char args_doc[] = "DIRECTORY";
 
 	struct argp parser = { options, parse_opt, args_doc, doc };

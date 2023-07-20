@@ -1,5 +1,7 @@
 # Wallpaper
-Simple wallpaper script for X11 using SDL2, that transitions between random files in a directory.
+Simple wallpaper script for Linux running X11 display server, and using the SDL2
+library. Wallpaper transitions between random files in a directory every few
+seconds, and can be configured.
 
 ## Installation
 ```
